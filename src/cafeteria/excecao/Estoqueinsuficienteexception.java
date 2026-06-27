@@ -1,4 +1,4 @@
-package cafeteriaa.excecao;
+package cafeteria.excecao;
 
 public class Estoqueinsuficienteexception extends Exception {
 
