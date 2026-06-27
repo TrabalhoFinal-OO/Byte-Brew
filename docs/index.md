@@ -1,13 +1,157 @@
-# 📊 Documentação e Diagramas do Projeto
+# Documentação - Sistema Byte & Brew
 
-Esta pasta contém toda a modelagem técnica e estrutural do sistema **Byte-Brew**.
+Este documento descreve a infraestrutura de software, a persistência de dados em memória e a estratégia de arquitetura de serviços implementadas na versão atual do sistema de backend da cafeteria Byte & Brew (baseado em Java SE).
 
-## 📌 Diagramas Disponíveis
 
-| Tipo de Diagrama | Descrição | Link para o Arquivo |
-| :--- | :--- | :--- |
-| **Diagrama de Blocos** | Fluxo de processos e macro-arquitetura do sistema. | [Visualizar PDF](./diagramas/diagrama_blocos.pdf) |
-| **Diagrama de Classes** | Estrutura de dados e relações POO (Java). | [Visualizar PDF](./diagramas/diagrama_classes.pdf) |
 
 ---
-💡 *Dica: Os diagramas serão atualizados conforme o avanço das sprints da disciplina FGA0158.*
+
+# Sumário
+
+* [Modelagem Arquitetural no draw.io](#modelagem-arquitetural-no-drawio)
+* [Arquitetura de Software e Divisão de Pacotes](#arquitetura-de-software-e-divisão-de-pacotes)
+    * [Pacote cafeteria.modelo](#pacote-cafeteriamodelo)
+        * [Classe Produto (Abstração e Encapsulamento)](#classe-produto-abstração-e-encapsulamento)
+        * [Classe ProdutoRepository (Persistência e Coleções)](#classe-produtorepository-persistência-e-coleções)
+        * [Classe Comida (Herança e Atributos Específicos)](#classe-comida-herança-e-atributos-específicos)
+        * [Classe Bebida (Herança e Atributos Específicos)](#classe-bebida-herança-e-atributos-específicos)
+        * [Classe Cliente (Classe Abstrata e Modelagem)](#classe-cliente-classe-abstrata-e-modelagem)
+        * [Classe ClienteStandard (Herança e Polimorfismo)](#classe-clientestandard-herança-e-polimorfismo)
+        * [Classe ClienteVip (Herança e Regras de Fidelidade)](#classe-clientevip-herança-e-regras-de-fidelidade)
+        * [Classe Atendente (Entidade e Associação)](#classe-atendente-entidade-e-associação)
+        * [Classe ItemPedido (Associação e Agregação)](#classe-itempedido-associação-e-agregação)
+        * [Classe Pedido (Encapsulamento e Composição de Estado)](#classe-pedido-encapsulamento-e-composição-de-estado)
+    * [Pacote cafeteria.servico](#pacote-cafeteriaservico)
+        * [Interface Promocional (Polimorfismo e Contratos)](#interface-promocional-polimorfismo-e-contratos)
+        * [Classe GerenciadorPedido (Malha de Serviço)](#classe-gerenciadorpedido-malha-de-serviço)
+    * [Pacote cafeteria.excecao](#pacote-cafeteriaexcecao)
+        * [Classe EstoqueInsuficienteException (Robustez e Robustez)](#classe-estoqueinsuficienteexception-robustez-e-robustez)
+    * [Pacote cafeteria.app](#pacote-cafeteriaapp)
+        * [Classe Main (Bootstrap e Testes)](#classe-main-bootstrap-e-testes)
+* [Exemplo de Implementação (Código do Backend)](#exemplo-de-implementação-código-do-backend)
+* [Histórico de Versões](#histórico-de-versões)
+
+---
+
+# Modelagem Arquitetural no draw.io
+
+Para a concepção estrutural e mapeamento de dependências do ecossistema Byte & Brew, utilizamos o **draw.io** (diagrams.net) como ferramenta oficial de modelagem UML. 
+
+Através do draw.io, estruturamos visualmente a divisão de pacotes, os modificadores de acesso (`private` e `public`), a herança das subclasses e as relações de dependência entre as regras de negócio e o banco de dados em memória. O diagrama final gerado na ferramenta foi exportado e serve como o gabarito estrito para a implementação do código Java.
+
+---
+
+# Arquitetura de Software e Divisão de Pacotes
+
+Abaixo encontra-se o detalhamento de cada pacote implementado no sistema, isolando as responsabilidades e descrevendo quais pilares da Orientação a Objetos foram aplicados em cada classe.
+
+## Pacote cafeteria.modelo
+
+### Classe Produto (Abstração e Encapsulamento)
+* **O que foi aplicado:** * **Abstração:** A classe mapeia os atributos essenciais de um item real (código, nome, preço e estoque). No desenho arquitetural, ela foi definida como **abstrata** (`abstract`), servindo puramente de molde genérico, impedindo instanciar um produto que não seja especificamente uma Bebida ou Comida.
+    * **Encapsulamento Severo:** Todos os atributos foram blindados como `private`. O acesso e leitura desses estados internos são permitidos exclusivamente por portas controladas (métodos Getters). Não foram expostos métodos *Setters* genéricos para garantir a imutabilidade do código e do preço após o cadastro.
+    * **Lógica de Guarda:** O método `baixarEstoque(int quantidade)` implementa uma validação interna que impede que o estoque assuma valores negativos, protegendo a integridade dos dados da aplicação.
+
+### Classe ProdutoRepository (Persistência e Coleções)
+* **O que foi aplicado:** * **Encapsulamento de Infraestrutura:** Isola o acesso direto aos dicionários de dados. Quem precisa salvar ou buscar um produto não sabe (e não precisa saber) que o sistema usa um `HashMap` por baixo dos panos.
+    * **Uso de Memória Estática:** Os mapas de dados foram definidos com o modificador `static`, garantindo que os dados persistidos sejam globais e compartilhados por todo o ciclo de vida da aplicação, simulando de forma idêntica um banco de dados unificado.
+
+### Classe Comida (Herança e Atributos Específicos)
+* **O que foi aplicado:** * Herança (extends Produto): Herda todas as características básicas de Produto (código, nome, preço base), evitando a duplicação de código. Adiciona os atributos específicos do seu domínio de negócio, como tempoPreparoMinutos e as marcações booleanas isVegano e isGlutenFree.
+  
+### Classe Bebida (Herança e Atributos Específicos)
+* **O que foi aplicado:** * Herança (extends Produto): Também estende a classe mãe Produto reutilizando toda a sua lógica de encapsulamento de dados, mas especializa o modelo contendo o atributo específico tamanho para diferenciar as porções servidas na cafeteria.
+
+### Classe Cliente (Classe Abstrata e Modelagem)
+* **O que foi aplicado:** * Abstração e Encapsulamento: Classe base conceitual definida para blindar dados do cliente (nome, cpf e o saldo total de compras acumulado). Ela dita as assinaturas de operações de pagamento e acúmulo de pontos que seus herdeiros são obrigados a detalhar.
+
+### Classe ClienteStandard (Herança e Polimorfismo)
+* **O que foi aplicado:** * Polimorfismo de Sobrescrita: Herda de Cliente e implementa o método de cálculo ou aplicação de valores de forma convencional, sem privilégios de pontuação adicionais em sua carteira.
+
+### Classe ClienteVip (Herança e Regras de Fidelidade)
+* **O que foi aplicado:** * Especialização por Herança: Sobrescreve métodos da classe mãe para injetar a regra de pontuação bônus do programa de fidelidade da cafeteria a cada compra processada, manipulando seu histórico de benefícios internos de forma isolada.
+
+### Classe Atendente (Entidade e Associação)
+* **O que foi aplicado:** * Encapsulamento: Representa os colaboradores operacionais do sistema. Guarda de forma privada dados como nome, cpf e matrícula, atuando como o elo humano associado diretamente à abertura de novos pedidos.
+
+### Classe ItemPedido (Associação e Agregação)
+* **O que foi aplicado:** * Agregação de Objetos: Classe intermediária crucial que une o conceito de quantidade a um objeto Produto específico. Ela encapsula o cálculo do subtotal do item multiplicando o preço base pela quantidade solicitada.
+
+### Classe Pedido (Encapsulamento e Composição de Estado)
+* **O que foi aplicado:** * Composição e Associação Complexa: Centraliza o fluxo de vendas do sistema contendo coleções dinâmicas de ItemPedido, além de referências diretas para o Cliente e para o Atendente responsável. Gerencia estados internos do pagamento (pagoComPix, pagoComPontos) e delega as baixas nos produtos adicionados.
+
+
+## Pacote cafeteria.servico
+
+### Interface Promocional (Polimorfismo e Contratos)
+* **O que foi aplicado:** * **Contratos Limpos (Interfaces):** Não possui atributos nem corpos de método. Ela dita estritamente um comportamento obrigatório para o sistema.
+    * **Polimorfismo:** Permite que diferentes tipos de regras de desconto (como o desconto do Dia Geek ou descontos de fidelidade) sejam tratados de forma genérica pelo sistema através do método `aplicarDesconto(double totalAtual)`. O sistema chama o método sem precisar saber qual classe específica está executando o cálculo.
+
+### Classe GerenciadorPedido (Malha de Serviço)
+* **O que foi aplicado:**
+    * **Alta Coesão:** Desonera as classes de modelo de carregar lógica de processamento financeiro. Ela atua puramente como uma classe orquestradora de serviços, recebendo o objeto `Pedido` e comandando o seu fluxo de finalização.
+
+## Pacote cafeteria.excecao
+
+### Classe EstoqueInsuficienteException (Robustez e Reuso)
+* **O que foi aplicado:**
+    * **Herança (`extends Exception`):** Aplicação direta de herança para estender as capacidades da classe mãe nativa do Java. Com isso, a classe se torna uma *Checked Exception*, interrompendo o fluxo imediatamente caso um cliente tente comprar mais unidades do que o repositório possui.
+    * **Reuso via Construtor (`super`):** O construtor utiliza o método `super(mensagem)` para repassar a string de erro diretamente para a infraestrutura de tratamento de exceções do Java.
+
+## Pacote cafeteria.app
+
+### Classe Main (Bootstrap e Testes)
+* **O que foi aplicado:**
+    * **Ponto de Entrada Inicial:** Responsável única por dar o arranque (*Bootstrap*) no sistema.
+    * **Polimorfismo via Classe Anônima:** Utilizada para instanciar e validar localmente o comportamento da classe abstrata `Produto` e testar os métodos de CRUD do `ProdutoRepository` sem dependências externas das subclasses de negócio do grupo.
+
+---
+
+# Exemplo de Implementação (Código do Backend)
+
+Mecânica do repositório modelada no draw.io e convertida para código Java:
+
+```java
+package cafeteria.modelo;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class ProdutoRepository {
+    private static Map<String, Integer> estoqueProdutos = new HashMap<>();
+    private static Map<String, Produto> catalogoProdutos = new HashMap<>();
+    
+    public void salvar(Produto p, int quantidadeInicial) {
+        catalogoProdutos.put(p.getCodigo(), p);
+        estoqueProdutos.put(p.getCodigo(), quantidadeInicial);
+    }
+    
+    public Produto buscarPorCodigo(String codigo) {
+        return catalogoProdutos.get(codigo);
+    }
+    
+    public int consultarEstoque(String codigo) {
+        return estoqueProdutos.getOrDefault(codigo, 0);
+    }
+    
+    public void atualizarEstoque(String codigo, int quantidade) {
+        if(estoqueProdutos.containsKey(codigo)) {
+            estoqueProdutos.put(codigo, quantidade);
+        }
+    }
+}
+
+```
+
+---
+
+# Histórico de Versões
+
+| Versão | Descrição das Implementações | Autor(es) | Data de Produção | Status |
+| --- | --- | --- | --- | --- |
+| `1.0` | Modelagem arquitetural das classes via ferramenta draw.io | Seu Nome / Grupo | 27/06/2026 | ✓ |
+
+
+```
+
+```
