@@ -84,4 +84,12 @@ public class Pedido {
 	public Cliente getCliente() {
 		return cliente;
 	}
+
+	public Atendente getAtendente() {
+		return atendente;
+	}
+
+	public LocalDate getData() {
+		return data;
+	}
 }
