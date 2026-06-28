@@ -69,7 +69,7 @@ Abaixo encontra-se o detalhamento de cada pacote implementado no sistema, isolan
 * **O que foi aplicado:** * Polimorfismo de Sobrescrita: Herda de Cliente e implementa o método de cálculo ou aplicação de valores de forma convencional, sem privilégios de pontuação adicionais em sua carteira.
 
 ### Classe ClienteVip (Herança e Regras de Fidelidade)
-* **O que foi aplicado:** * Especialização por Herança: Sobrescreve métodos da classe mãe para injetar a regra de pontuação bônus do programa de fidelidade da cafeteria a cada compra processada, manipulando seu histórico de benefícios internos de forma isolada.
+* **O que foi aplicado:** A classe ClienteVIP representa uma especialização da classe abstrata Cliente, reutilizando dados e comportamentos comuns definidos na superclasse Cliente. Nessa classe, foi aplicada a sobrescrita do método adicionarXP(),  permitindo que o ClienteVIP receba uma pontuação diferente no programa de fidelidade, quando comparado ao ClienteStandard. Além disso, há o método pagarXP(), que permite ao ClienteVIP utilizar seu saldo de XP como forma de pagamento. Dessa forma, a classe concentra regras específicas de fidelidade e benefícios exclusivos.
 
 ### Classe Atendente (Entidade e Associação)
 * **O que foi aplicado:** * Encapsulamento: Representa os colaboradores operacionais do sistema. Guarda de forma privada dados como nome, cpf e matrícula, atuando como o elo humano associado diretamente à abertura de novos pedidos.
