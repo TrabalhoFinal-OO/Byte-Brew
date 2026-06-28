@@ -3,6 +3,8 @@ package cafeteria.modelo;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
+import cafeteria.excecao.EstoqueInsuficienteException;
+
 public class Pedido {
 	// Atributos 
 	private static int contadorNumPedido = 1;
@@ -33,7 +35,8 @@ public class Pedido {
 	}
 	
 	public void adicionarItem(Produto p, int quantidade) {
-		
+		ItemPedido item = new ItemPedido(p, quantidade);
+		this.listaPedido.add(item);
 	}
 	
 	public double getTotal() {
@@ -41,11 +44,20 @@ public class Pedido {
 		for(ItemPedido item: listaPedido) {
 			total += item.getSubtotal();
 		}
-		return total;		
+		return total-this.descontoPromocional;		
 	}
 	
-	public void finalizarPedido() {
-		
+	public void finalizarPedido() throws EstoqueInsuficienteException {
+	    for (ItemPedido item : listaPedido) {
+	        Produto produtoDoItem = item.getProduto();
+	        int quantidadeVendida = item.getQuantidade();
+	        produtoDoItem.baixarEstoque(quantidadeVendida);
+	    }
+	    
+	    if (this.cliente != null) {
+	        double valorTotalDoPedido = this.getTotal();
+	        this.cliente.adicionarXP(valorTotalDoPedido); 
+	    }
 	}
 	
 	// Getters e Setters:
